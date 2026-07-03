@@ -450,7 +450,7 @@ class Engine:
 
             start_global = self._to_global(ox, oy, oyaw)
             if ctype in ("L", "R"):
-                center_local = turning_center(ox, oy, oyaw, 1.0, ctype)
+                center_local = turning_center(ox, oy, oyaw, self.rho, ctype)
                 center_global = self._to_global(*center_local, 0.0)[:2]
                 detail = (f"Segment {seg_i + 1}/{len(winner['ctypes'])}: {ctype}-turn, {direction}\n"
                           f"  arc angle = {abs(raw_len):.3f} rad ({math.degrees(abs(raw_len)):.1f}°)\n"

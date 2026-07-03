@@ -3,8 +3,9 @@
 Step-by-step, interactive visualizations built while working through the
 sampling-based motion planning sequence for the *Advanced Mobile Robotics*
 course (University of Stuttgart, SS26): **RRT → RRT-Connect → Reeds-Shepp
-steering** — the last of which is the local planner an SE(2) `EXTEND()`
-needs before this can be wired into an actual OMPL `RRTConnect` planner.
+steering → RRT-Connect with Reeds-Shepp steering** — the last of which is
+the actual local planner an SE(2) `EXTEND()` needs before this can be
+wired into a real OMPL `RRTConnect` planner.
 
 Every script uses real randomness / real geometry (no scripted or
 pre-baked outputs) and lets you click through the algorithm one micro-step
@@ -21,6 +22,7 @@ at a time, seeing exactly what each internal function (`Nearest()`,
 | `rrt_interactive.py` | Interactive RRT: a real-time, click-through (`Next`/`Back`) run with genuine `random.uniform()` sampling, a live pseudocode highlight, and a "Function Detail" panel breaking down `Nearest()`, `Steer()`, and `CollisionFree()` down to the arithmetic. |
 | `rrt_connect_interactive.py` | Interactive **RRT-Connect** (Kuffner & LaValle, 2000): two trees, `EXTEND()` / `CONNECT()` / `SWAP()`, with the pseudocode call-stack highlighted across all three published pseudocode blocks as execution moves between them. |
 | `reeds_shepp_interactive.py` | Interactive **Reeds-Shepp steering**: enumerates all 12 RS word types × 4 symmetry variants (≈48 candidate curves), picks the shortest (mirroring `OMPL::ReedsSheppStateSpace::getPath()`), then discretizes and collision-checks it segment by segment — this is what a real `EXTEND()` uses in place of straight-line interpolation for a car-like (SE(2)) robot. |
+| `rrt_connect_reeds_shepp_interactive.py` | **RRT-Connect + Reeds-Shepp steering, integrated**: the same two-tree `EXTEND()`/`CONNECT()`/`SWAP()` control structure, but every tree node is now a full SE(2) pose, `NEAREST_NEIGHBOR()`'s distance metric is Reeds-Shepp path length (matching `ompl::ReedsSheppStateSpace::distance()`), and `NEW_CONFIG()` steers along the shortest RS curve to the target, truncated to a max arc-length per extend (matching how OMPL's `RRTConnect::growTree()` interpolates along the state space when the sample is farther than `maxDistance`). The final path is a real driveable curve — arcs and straight segments, forward and backward — not a polyline. |
 
 ## Demo
 
@@ -64,6 +66,10 @@ python rrt_connect_interactive.py --seed 1
 python reeds_shepp_interactive.py
 python reeds_shepp_interactive.py --seed 5 --rho 2.0
 python reeds_shepp_interactive.py --start 1 1 0 --goal 9 2 0
+
+# Interactive RRT-Connect + Reeds-Shepp steering (the full integration)
+python rrt_connect_reeds_shepp_interactive.py
+python rrt_connect_reeds_shepp_interactive.py --seed 3 --rho 2.0 --range 6.0
 ```
 
 ## Notes on correctness
@@ -89,6 +95,14 @@ python reeds_shepp_interactive.py --start 1 1 0 --goal 9 2 0
   checking (an illustrative Opel Corsa F footprint rectangle is drawn at
   the start/goal poses for scale only). Sweeping the full oriented
   rectangle along the curve is a further step, not yet implemented here.
+- `rrt_connect_reeds_shepp_interactive.py` imports `reeds_shepp_interactive.py`
+  and `rrt_connect_interactive.py` as modules rather than re-deriving their
+  math or pseudocode text, so there's exactly one implementation of the RS
+  path synthesis and one copy of the published RRT-Connect pseudocode in
+  this repo. Verified headlessly across 20+ random seeds: every run
+  produces a collision-free, continuous, exactly-Start-to-Goal path, and
+  every `Advanced` (range-truncated) extend stays within the configured
+  max arc-length.
 
 ## License
 
